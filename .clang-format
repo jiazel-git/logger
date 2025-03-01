@@ -44,7 +44,7 @@ BinPackParameters:  true
 # 大括号换行，只有当BreakBeforeBraces设置为Custom时才有效
 BraceWrapping:   
   # class定义后面
-  AfterClass: true
+  AfterClass: false
   # 控制语句后面
   AfterControlStatement:  false
   # enum定义后面

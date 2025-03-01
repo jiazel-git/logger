@@ -24,8 +24,7 @@
 
 namespace jz
 {
-class logger
-{
+class logger {
 public:
     enum log_level : int
     {
