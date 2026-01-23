@@ -46,7 +46,7 @@ private:
 
     void create_new_file();
 
-    std::string format_log_recore( LogRecord _r );
+    std::string format_log_record( LogRecord _r );
 
     void flush_buffer_to_file();
 

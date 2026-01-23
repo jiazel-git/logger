@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <ios>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -21,7 +22,7 @@ CFileSink::CFileSink() noexcept :
     _level( LogLevel::TRACE ),
     _file_size( 10 * 1024 * 1024 ),
     _buffer_size( 8 * 1024 ),
-    _file_path( "../../log/" ),
+    _file_path( "../log/" ),
     _cur_file_name( "" ),
     _cur_file_size( 0 ),
     _enabled( true ),
@@ -49,7 +50,7 @@ void CFileSink::write( const LogRecord& _r ) {
     }
 
     // 格式化日志记录
-    std::string fmt_record = format_log_recore( _r );
+    std::string fmt_record = format_log_record( _r );
 
     if ( _buffer._size + fmt_record.size() > _buffer_size ) {
         flush_buffer_to_file();
@@ -60,12 +61,14 @@ void CFileSink::write( const LogRecord& _r ) {
     }
 
     std::memcpy( _buffer._buf.get() + _buffer._pos, fmt_record.data(), fmt_record.size() );
+    std::cout << "record:" << fmt_record;
     _buffer._size += fmt_record.size();
     _buffer._pos += fmt_record.size();
+    std::cout << "buf:" << _buffer._buf.get() << std::endl;
 
-    if ( _buffer._size > _buffer_size * 0.8 ) {
-        flush_buffer_to_file();
-    }
+    // if ( _buffer._size > _buffer_size * 0.8 ) {
+    flush_buffer_to_file();
+    //}
 }
 
 void CFileSink::flush() {
@@ -110,6 +113,7 @@ void CFileSink::flush_buffer_to_file() {
         _file_stream.write( _buffer._buf.get(), _buffer._size );
         _cur_file_size += _buffer._size;
         _buffer.clear_buf();
+        flush();
     }
 }
 
@@ -119,19 +123,18 @@ void CFileSink::rotate_file() {
     create_new_file();
 }
 
-std::string CFileSink::format_log_recore( LogRecord _r ) {
+std::string CFileSink::format_log_record( LogRecord _r ) {
     // 简单的格式化示例，可根据需求调整
     std::stringstream ss;
 
     auto time = std::chrono::system_clock::to_time_t( _r._timestamp );
 
     ss << std::put_time( std::localtime( &time ), "%Y-%m-%d %H:%M:%S" ) << " ["
-       << loglevel::to_string( _r._level ) << "] " << _r._loaction._file_name << " "
-       << _r._loaction._function_name << " " << _r._loaction._line << " " << _r._message << "\n";
+       << loglevel::to_string( _r._level ) << "] " << _r._message << "\n";
 
     return ss.str();
 }
 
-CFileSink::~CFileSink() { flush(); }
+CFileSink::~CFileSink() { flush_buffer_to_file(); }
 }  // namespace sinks
 }  // namespace jzlog

@@ -1,15 +1,13 @@
 #pragma once
 
 #include <algorithm>
-#include <cctype>
-#include <cstdint>
 #include <string>
 #include <string_view>
 namespace jzlog
 {
 namespace loglevel
 {
-enum class LogLevel : uint8_t
+enum class LogLevel : int
 {
     TRACE = 0,
     DEBUG,
@@ -69,26 +67,26 @@ inline LogLevel from_string( std::string_view _str ) noexcept {
     return level;
 }
 inline constexpr bool operator==( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< uint8_t >( _left ) == static_cast< uint8_t >( _right );
+    return static_cast< int >( _left ) == static_cast< int >( _right );
 }
 inline constexpr bool operator!=( LogLevel _left, LogLevel _right ) noexcept {
     return !( _left == _right );
 }
 inline constexpr bool operator>( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< uint8_t >( _left ) > static_cast< uint8_t >( _right );
+    return static_cast< int >( _left ) > static_cast< int >( _right );
 }
 inline constexpr bool operator>=( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< uint8_t >( _left ) >= static_cast< uint8_t >( _right );
+    return static_cast< int >( _left ) >= static_cast< int >( _right );
 }
 inline constexpr bool operator<( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< uint8_t >( _left ) < static_cast< uint8_t >( _right );
+    return static_cast< int >( _left ) < static_cast< int >( _right );
 }
 inline constexpr bool operator<=( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< uint8_t >( _left ) <= static_cast< uint8_t >( _right );
+    return static_cast< int >( _left ) <= static_cast< int >( _right );
 }
 inline constexpr LogLevel operator++( LogLevel _level ) noexcept {
     if ( _level < LogLevel::OFF ) {
-        _level = static_cast< LogLevel >( static_cast< uint8_t >( _level ) + 1 );
+        _level = static_cast< LogLevel >( static_cast< int >( _level ) + 1 );
     }
     return _level;
 }
@@ -99,7 +97,7 @@ inline constexpr LogLevel operator++( LogLevel _level, int ) noexcept {
 }
 inline constexpr LogLevel operator--( LogLevel _level ) noexcept {
     if ( _level > LogLevel::TRACE ) {
-        _level = static_cast< LogLevel >( static_cast< uint8_t >( _level ) - 1 );
+        _level = static_cast< LogLevel >( static_cast< int >( _level ) - 1 );
     }
     return _level;
 }

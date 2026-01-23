@@ -17,8 +17,8 @@ public:
 
 public:
     explicit CLogBuilder( LogLevel _level, std::string_view _logger_name );
-    template < class... _Args >
-    void        set_message( std::string_view _fmt, _Args&&... _args );
+    void set_message( std::string_view _msg );
+
     void        set_location( const SourceLocation& _location ) noexcept;
     std::string to_string() const noexcept;
     LogRecord   build();
