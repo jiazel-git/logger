@@ -1,8 +1,10 @@
 #include "jzlog/logger.hpp"
-#include "jzlog/slinks/file_sink.h"
+#include "jzlog/sinks/file_sink.h"
 #include <chrono>
 #include <memory>
+#include <numeric>
 #include <thread>
+#include <vector>
 
 int main( int argc, char* argv[] ) {
     jzlog::CLogger logger;
@@ -11,5 +13,6 @@ int main( int argc, char* argv[] ) {
         logger.info( "test log %s\n", "hello world" );
         std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
     }
+    std::vector< int > v{ 5 };
     return 0;
 }

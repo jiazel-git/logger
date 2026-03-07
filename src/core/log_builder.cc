@@ -10,24 +10,24 @@ namespace jzlog
 {
 class CLogBuilder::CLogBuilderImpl {
 public:
-    CLogBuilderImpl()                                         = default;
-    CLogBuilderImpl( const CLogBuilderImpl& _oth )            = delete;
-    CLogBuilderImpl& operator=( const CLogBuilderImpl& _oth ) = delete;
-    CLogBuilderImpl( CLogBuilderImpl&& _oth )                 = default;
-    CLogBuilderImpl& operator=( CLogBuilderImpl&& _oth )      = default;
+    CLogBuilderImpl()                                        = default;
+    CLogBuilderImpl( const CLogBuilderImpl& oth )            = delete;
+    CLogBuilderImpl& operator=( const CLogBuilderImpl& oth ) = delete;
+    CLogBuilderImpl( CLogBuilderImpl&& oth )                 = default;
+    CLogBuilderImpl& operator=( CLogBuilderImpl&& oth )      = default;
     ~CLogBuilderImpl() {}
 
 public:
-    explicit CLogBuilderImpl( LogLevel _lvl, std::string_view _logger_name ) noexcept :
-        _record( _lvl, _logger_name ) {}
+    explicit CLogBuilderImpl( LogLevel lvl, std::string_view logger_name ) noexcept :
+        _record( lvl, logger_name ) {}
 
-    template < class... _Args >
-    inline void set_message( std::string_view _msg ) {
-        _record._message = _msg;
+    template < class... Args >
+    inline void set_message( std::string_view msg ) {
+        _record._message = msg;
     }
 
-    inline void set_location( const SourceLocation& _location ) noexcept {
-        _record._loaction = _location;
+    inline void set_location( const SourceLocation& location ) noexcept {
+        _record._loaction = location;
     }
 
     LogRecord build() {
@@ -42,19 +42,19 @@ private:
     LogRecord _record;
 };
 
-CLogBuilder::CLogBuilder( LogLevel _lvl, std::string_view _logger_name ) :
-    _impl( std::make_unique< CLogBuilderImpl >( _lvl, _logger_name ) ) {}
+CLogBuilder::CLogBuilder( LogLevel lvl, std::string_view logger_name ) :
+    _impl( std::make_unique< CLogBuilderImpl >( lvl, logger_name ) ) {}
 
-CLogBuilder::~CLogBuilder()                               = default;
+CLogBuilder::~CLogBuilder()                              = default;
 
-CLogBuilder::CLogBuilder( CLogBuilder&& _oth )            = default;
+CLogBuilder::CLogBuilder( CLogBuilder&& oth )            = default;
 
-CLogBuilder& CLogBuilder::operator=( CLogBuilder&& _oth ) = default;
+CLogBuilder& CLogBuilder::operator=( CLogBuilder&& oth ) = default;
 
-void CLogBuilder::set_message( std::string_view _msg ) { this->_impl->set_message( _msg ); }
+void CLogBuilder::set_message( std::string_view msg ) { this->_impl->set_message( msg ); }
 
-void CLogBuilder::set_location( const SourceLocation& _location ) noexcept {
-    this->_impl->set_location( _location );
+void CLogBuilder::set_location( const SourceLocation& location ) noexcept {
+    this->_impl->set_location( location );
 }
 
 LogRecord CLogBuilder::build() { return this->_impl->build(); }

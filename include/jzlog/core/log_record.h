@@ -39,10 +39,10 @@ struct LogRecord {
     LogRecord& operator=( LogRecord&& _oth )      = default;
     ~LogRecord()                                  = default;
 
-    LogRecord( LogLevel _lvl, std::string_view _logger ) noexcept :
+    LogRecord( LogLevel lvl, std::string_view logger ) noexcept :
         _timestamp( std::chrono::system_clock::now() ),
-        _level( _lvl ),
-        _logger_name( _logger ),
+        _level( lvl ),
+        _logger_name( logger ),
         _message( "" ),
         _thread_id(),
         _loaction() {}

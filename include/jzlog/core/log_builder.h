@@ -12,14 +12,14 @@ class CLogBuilder {
 public:
     CLogBuilder();
     ~CLogBuilder();
-    CLogBuilder( CLogBuilder&& _oth );
-    CLogBuilder& operator=( CLogBuilder&& _oth );
+    CLogBuilder( CLogBuilder&& oth );
+    CLogBuilder& operator=( CLogBuilder&& oth );
 
 public:
-    explicit CLogBuilder( LogLevel _level, std::string_view _logger_name );
-    void set_message( std::string_view _msg );
+    explicit CLogBuilder( LogLevel level, std::string_view logger_name );
+    void set_message( std::string_view msg );
 
-    void        set_location( const SourceLocation& _location ) noexcept;
+    void        set_location( const SourceLocation& location ) noexcept;
     std::string to_string() const noexcept;
     LogRecord   build();
 

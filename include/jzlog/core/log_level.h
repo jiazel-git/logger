@@ -19,8 +19,8 @@ enum class LogLevel : int
     ALL
 };
 
-inline constexpr std::string_view to_string( LogLevel _level ) noexcept {
-    switch ( _level ) {
+inline constexpr std::string_view to_string( LogLevel level ) noexcept {
+    switch ( level ) {
     case ( LogLevel::TRACE ):
         return "TRACE";
     case ( LogLevel::DEBUG ):
@@ -39,15 +39,15 @@ inline constexpr std::string_view to_string( LogLevel _level ) noexcept {
         return "ALL";
     }
 }
-inline LogLevel from_string( std::string_view _str ) noexcept {
-    auto upper_str = []( std::string_view _str ) -> std::string {
-        std::string ret{ _str };
-        std::transform( ret.begin(), ret.end(), ret.begin(), []( auto& _Ch ) {
-            return std::toupper( _Ch );
+inline LogLevel from_string( std::string_view str ) noexcept {
+    auto upper_str = []( std::string_view s ) -> std::string {
+        std::string ret{ s };
+        std::transform( ret.begin(), ret.end(), ret.begin(), []( auto& ch ) {
+            return std::toupper( ch );
         } );
         return ret;
     };
-    std::string upper{ upper_str( _str ) };
+    std::string upper{ upper_str( str ) };
     LogLevel    level{ LogLevel::ALL };
     if ( upper == "TRACE" ) {
         level = LogLevel::TRACE;
@@ -66,44 +66,44 @@ inline LogLevel from_string( std::string_view _str ) noexcept {
     }
     return level;
 }
-inline constexpr bool operator==( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< int >( _left ) == static_cast< int >( _right );
+inline constexpr bool operator==( LogLevel left, LogLevel right ) noexcept {
+    return static_cast< int >( left ) == static_cast< int >( right );
 }
-inline constexpr bool operator!=( LogLevel _left, LogLevel _right ) noexcept {
-    return !( _left == _right );
+inline constexpr bool operator!=( LogLevel left, LogLevel right ) noexcept {
+    return !( left == right );
 }
-inline constexpr bool operator>( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< int >( _left ) > static_cast< int >( _right );
+inline constexpr bool operator>( LogLevel left, LogLevel right ) noexcept {
+    return static_cast< int >( left ) > static_cast< int >( right );
 }
-inline constexpr bool operator>=( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< int >( _left ) >= static_cast< int >( _right );
+inline constexpr bool operator>=( LogLevel left, LogLevel right ) noexcept {
+    return static_cast< int >( left ) >= static_cast< int >( right );
 }
-inline constexpr bool operator<( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< int >( _left ) < static_cast< int >( _right );
+inline constexpr bool operator<( LogLevel left, LogLevel right ) noexcept {
+    return static_cast< int >( left ) < static_cast< int >( right );
 }
-inline constexpr bool operator<=( LogLevel _left, LogLevel _right ) noexcept {
-    return static_cast< int >( _left ) <= static_cast< int >( _right );
+inline constexpr bool operator<=( LogLevel left, LogLevel right ) noexcept {
+    return static_cast< int >( left ) <= static_cast< int >( right );
 }
-inline constexpr LogLevel operator++( LogLevel _level ) noexcept {
-    if ( _level < LogLevel::OFF ) {
-        _level = static_cast< LogLevel >( static_cast< int >( _level ) + 1 );
+inline constexpr LogLevel operator++( LogLevel level ) noexcept {
+    if ( level < LogLevel::OFF ) {
+        level = static_cast< LogLevel >( static_cast< int >( level ) + 1 );
     }
-    return _level;
+    return level;
 }
-inline constexpr LogLevel operator++( LogLevel _level, int ) noexcept {
-    LogLevel temp{ _level };
-    ++_level;
+inline constexpr LogLevel operator++( LogLevel level, int ) noexcept {
+    LogLevel temp{ level };
+    ++level;
     return temp;
 }
-inline constexpr LogLevel operator--( LogLevel _level ) noexcept {
-    if ( _level > LogLevel::TRACE ) {
-        _level = static_cast< LogLevel >( static_cast< int >( _level ) - 1 );
+inline constexpr LogLevel operator--( LogLevel level ) noexcept {
+    if ( level > LogLevel::TRACE ) {
+        level = static_cast< LogLevel >( static_cast< int >( level ) - 1 );
     }
-    return _level;
+    return level;
 }
-inline constexpr LogLevel operator--( LogLevel _level, int ) noexcept {
-    LogLevel temp{ _level };
-    --_level;
+inline constexpr LogLevel operator--( LogLevel level, int ) noexcept {
+    LogLevel temp{ level };
+    --level;
     return temp;
 }
 }  // namespace loglevel
