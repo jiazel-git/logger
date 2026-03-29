@@ -1,131 +1,161 @@
-#include "jzlog/core/log_builder.h"
+#pragma once
 #include "jzlog/core/log_level.h"
 #include "jzlog/core/log_record.h"
 #include "jzlog/sinks/sink.h"
-#include "jzlog/utils/thread_safe_queue.hpp"
-#include <algorithm>
-#include <atomic>
-#include <chrono>
-#include <cstddef>
-#include <iostream>
+#include <cstdio>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
+
 namespace jzlog
 {
+
+/**
+ * @class CLoggerImpl
+ * @brief 日志记录器实现类
+ * @details 采用简化架构：用户线程直接调用 sink.write()，由 sink 内部处理缓冲
+ *
+ * 架构对比：
+ * - 旧架构：用户线程 → 队列 → 工作线程 → sink → 双缓冲区 → 磁盘
+ * - 新架构：用户线程 → sink → 三缓冲区 → 磁盘
+ *
+ * 优势：
+ * - 减少一次线程间拷贝
+ * - 降低延迟
+ * - 简化代码复杂度
+ */
 class CLoggerImpl {
 public:
-    explicit CLoggerImpl( loglevel::LogLevel lvl, std::string_view logger_name ) noexcept :
-        _running( false ), _log_builder( lvl, logger_name ) {
-        start();
-    }
+    /**
+     * @brief 构造函数
+     * @param lvl 日志级别
+     * @param logger_name 日志器名称
+     */
+    explicit CLoggerImpl( loglevel::LogLevel lvl, std::string_view logger_name ) noexcept {}
 
-    CLoggerImpl( CLoggerImpl&& oth )            = delete;
+    CLoggerImpl( const CLoggerImpl& )            = delete;
+    CLoggerImpl& operator=( const CLoggerImpl& ) = delete;
 
-    CLoggerImpl& operator=( CLoggerImpl&& oth ) = delete;
+    CLoggerImpl( CLoggerImpl&& oth )             = delete;
+    CLoggerImpl& operator=( CLoggerImpl&& oth )  = delete;
 
-    ~CLoggerImpl() { stop(); }
+    ~CLoggerImpl()                               = default;
 
 public:
+    /**
+     * @brief 记录 INFO 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
     template < class... Args >
-    inline void info( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
+    inline void info( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel ::INFO, fmt, std::forward< Args >( args )... );
     }
 
+    /**
+     * @brief 记录 TRACE 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
     template < class... Args >
-    inline void trace( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
-    }
-    template < class... Args >
-    inline void debug( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
-    }
-
-    template < class... Args >
-    inline void warn( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
+    inline void trace( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel::TRACE, fmt, std::forward< Args >( args )... );
     }
 
+    /**
+     * @brief 记录 DEBUG 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
     template < class... Args >
-    inline void error( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
+    inline void debug( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel::DEBUG, fmt, std::forward< Args >( args )... );
     }
 
+    /**
+     * @brief 记录 WARN 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
     template < class... Args >
-    inline void fatal( std::string_view fmt, Args&&... args ) noexcept {
-        add_record( fmt, std::forward< Args >( args )... );
+    inline void warn( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel::WARN, fmt, std::forward< Args >( args )... );
     }
 
+    /**
+     * @brief 记录 ERROR 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
+    template < class... Args >
+    inline void error( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel::ERROR, fmt, std::forward< Args >( args )... );
+    }
+
+    /**
+     * @brief 记录 FATAL 级别日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
+    template < class... Args >
+    inline void fatal( std::string_view fmt, Args&&... args ) const noexcept {
+        add_record( LogLevel::FATAL, fmt, std::forward< Args >( args )... );
+    }
+
+    /**
+     * @brief 添加日志输出目标
+     * @param sink 日志 sink 智能指针
+     */
     void add_sink( std::unique_ptr< sinks::ISink > sink ) noexcept {
         _sinks.emplace_back( std::move( sink ) );
     }
 
 private:
+    /**
+     * @brief 将日志记录写入所有 sink
+     * @param record 日志记录
+     */
     void log( LogRecord&& record ) const noexcept {
-        for ( auto& slink : _sinks ) {
-            slink->write( std::move( record ) );
+        for ( auto& sink : _sinks ) {
+            sink->write( record );
         }
     }
 
-    void start() noexcept {
-        if ( !_running.exchange( true ) ) {
-            _thread = std::thread( &CLoggerImpl::work_thread, this );
-        }
-    }
-
-    void stop() noexcept {
-        if ( _running.exchange( false ) ) {
-            if ( _thread.joinable() ) {
-                _thread.join();
-            }
-        }
-    }
-
-    void work_thread() {
-        for ( ;; ) {
-            if ( _running ) {
-                LogRecord record;
-                if ( _records.try_pop( record ) && record.is_valid() ) {
-                    log( std::move( record ) );
-                } else {
-                    std::this_thread::sleep_for( std::chrono::microseconds{ 10 } );
-                }
-            } else {
-                break;
-            }
-        }
-        LogRecord record;
-        while ( _records.try_pop( record ) ) {
-            if ( record.is_valid() ) {
-                log( std::move( record ) );
-            }
-        }
-    }
-
+    /**
+     * @brief 构造并记录日志
+     * @tparam Args 参数类型
+     * @param fmt 格式字符串
+     * @param args 格式化参数
+     */
     template < class... Args >
-    void add_record( std::string_view fmt, Args&&... args ) noexcept {
-        char             fmt_cstr[ 1024 ] = { 0 };
-        constexpr size_t max_copy         = sizeof( fmt_cstr ) - 1;
-        size_t           len              = std::min( max_copy, fmt.size() );
-        std::copy_n( fmt.begin(), len, fmt_cstr );
+    void add_record( LogLevel level, std::string_view fmt, Args&&... args ) const noexcept {
+        int required = snprintf( nullptr, 0, fmt.data(), std::forward< Args >( args )... );
 
-        fmt_cstr[ len ]  = 0;
+        if ( required < 0 ) {
+            return;
+        }
+        std::vector< char > buf( required + 1, 0 );
 
-        char buf[ 1024 ] = { 0 };
-        int  written = snprintf( buf, sizeof( buf ), fmt_cstr, std::forward< Args >( args )... );
-        _log_builder.set_message( buf );
-        LogRecord record = _log_builder.build();
-        std::cout << "record:" << record.to_string();
-        _records.push( record );
+        snprintf( buf.data(), required + 1, fmt.data(), std::forward< Args >( args )... );
+        LogRecord record;
+        record._function  = __func__;
+        record._line      = __LINE__;
+        record._thread_id = std::this_thread::get_id();
+        record._message   = std::string( buf.data(), required );
+        record._level     = level;
+        log( std::move( record ) );
     }
 
 private:
-    std::atomic_bool                               _running;
-    std::thread                                    _thread;
-    CThreadSafeQueue< LogRecord >                  _records;
-    CLogBuilder                                    _log_builder;
     std::vector< std::unique_ptr< sinks::ISink > > _sinks;
 };
 

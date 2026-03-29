@@ -1,4 +1,3 @@
-// include/jzlog/sinks/isink.h
 #pragma once
 
 #include "jzlog/core/log_level.h"
@@ -10,57 +9,57 @@ namespace sinks
 {
 
 /**
- * @brief Sink ³éÏó½Ó¿Ú
- * @details ËùÓÐÊä³öÄ¿±êµÄ»ùÀà£¬¶¨ÒåÁËÈÕÖ¾Êä³öµÄ±ê×¼½Ó¿Ú
+ * @brief Sink 接口
+ * @details 定义日志输出目标的抽象基类
  */
 class ISink {
 public:
     virtual ~ISink() = default;
 
-    // ==================== ºËÐÄ¹¦ÄÜ ====================
+    // ==================== 核心功能 ====================
 
     /**
-     * @brief Ð´ÈëÈÕÖ¾¼ÇÂ¼
-     * @param record ÈÕÖ¾¼ÇÂ¼
-     * @note ÕâÊÇ Sink µÄÖ÷Òª¹¦ÄÜ£¬¸ºÔð½«ÈÕÖ¾Êä³öµ½Ä¿±ê
+     * @brief 写入日志记录
+     * @param record 日志记录
+     * @note 这是 Sink 的核心功能
      */
     virtual void write( const LogRecord& record ) = 0;
 
     /**
-     * @brief Ë¢ÐÂ»º³åÇø
-     * @note È·±£ËùÓÐ»º³åµÄÊý¾Ý¶¼±»Ð´ÈëÄ¿±ê
+     * @brief 刷新缓冲区
+     * @note 确保所有缓冲数据写入目标
      */
     virtual void flush() = 0;
 
-    // ==================== ¼¶±ð¹ýÂË ====================
+    // ==================== 级别过滤 ====================
 
     /**
-     * @brief ÉèÖÃ×îµÍÈÕÖ¾¼¶±ð
-     * @param level Ö»¼ÇÂ¼´Ë¼¶±ð¼°ÒÔÉÏµÄÈÕÖ¾
+     * @brief 设置最低日志级别
+     * @param level 等于或高于此级别的日志会被记录
      */
     virtual void set_level( LogLevel level ) noexcept = 0;
 
     /**
-     * @brief »ñÈ¡µ±Ç°ÉèÖÃµÄÈÕÖ¾¼¶±ð
+     * @brief 获取当前日志级别
      */
     virtual LogLevel level() const noexcept = 0;
 
     /**
-     * @brief ¼ì²éÊÇ·ñÓ¦¸Ã¼ÇÂ¼Ö¸¶¨¼¶±ðµÄÈÕÖ¾
-     * @param level Òª¼ì²éµÄÈÕÖ¾¼¶±ð
+     * @brief 检查是否应该记录指定级别的日志
+     * @param level 要检查的日志级别
      */
     virtual bool should_log( LogLevel level ) const noexcept = 0;
 
-    // ==================== ¿ª¹Ø¿ØÖÆ ====================
+    // ==================== 开关控制 ====================
 
     /**
-     * @brief ÆôÓÃ/½ûÓÃ Sink
-     * @param enabled true ÆôÓÃ£¬false ½ûÓÃ
+     * @brief 启用或禁用 Sink
+     * @param enabled true 启用，false 禁用
      */
     virtual void set_enabled( bool enabled ) noexcept = 0;
 
     /**
-     * @brief ¼ì²é Sink ÊÇ·ñÆôÓÃ
+     * @brief 检查 Sink 是否启用
      */
     virtual bool enabled() const noexcept = 0;
 };
