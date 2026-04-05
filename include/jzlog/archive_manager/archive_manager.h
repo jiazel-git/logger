@@ -1,18 +1,26 @@
 #pragma once
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <mutex>
 #include <string>
 #include <thread>
-#include <vector>
 
 namespace jzlog
 {
 namespace sinks
 {
+
+inline constexpr uint32_t kDefaultPackHour          = 2;
+inline constexpr uint32_t kDefaultPackMinute        = 0;
+inline constexpr uint64_t kDefaultCompressThreshold = 100 * 1024 * 1024;
+inline constexpr uint32_t kDefaultRetentionDays     = 30;
+inline constexpr size_t   kDateStringLength         = 8;
+inline constexpr uint32_t kHoursPerDay              = 24;
+inline constexpr size_t   kDateBufferSize           = 16;
+inline const char*        kDefaultBasePath          = "../log/";
 
 /**
  * @brief 日志归档配置结构体
@@ -20,7 +28,6 @@ namespace sinks
  */
 struct ArchiveConfig {
     std::string base_path;         ///< 日志根目录，默认 "../log/"
-    std::string log_file_pattern;  ///< 日志文件名前缀模式，用于匹配需要归档的日志文件，如 "app_"
     uint32_t    pack_hour;         ///< 每日打包时间（小时），默认 2（凌晨2点执行）
     uint32_t    pack_minute;       ///< 每日打包时间（分钟），默认 0
     uint64_t
@@ -34,12 +41,11 @@ struct ArchiveConfig {
      * @brief 默认构造函数，初始化为默认配置
      */
     ArchiveConfig() :
-        base_path( "../log/" ),
-        log_file_pattern( "app_" ),
-        pack_hour( 2 ),
-        pack_minute( 0 ),
-        compress_threshold( 100 * 1024 * 1024 ),  // 100 MB
-        retention_days( 30 ),
+        base_path( kDefaultBasePath ),
+        pack_hour( kDefaultPackHour ),
+        pack_minute( kDefaultPackMinute ),
+        compress_threshold( kDefaultCompressThreshold ),
+        retention_days( kDefaultRetentionDays ),
         enable_archive( true ),
         enable_compress( true ),
         enable_cleanup( true ) {}
@@ -87,15 +93,17 @@ public:
      * @brief 启动归档管理器
      * @details 启动后台工作线程，开始执行定时归档任务
      * @note 重复调用此函数不会产生副作用
+     * @return 是否启动成功
      */
-    void start() noexcept;
+    bool start() noexcept;
 
     /**
      * @brief 停止归档管理器
      * @details 停止后台工作线程，等待线程安全退出
      * @note 重复调用此函数不会产生副作用
+     * @return 是否停止成功
      */
-    void stop() noexcept;
+    bool stop() noexcept;
 
     /**
      * @brief 立即执行所有归档任务（用于测试）
@@ -108,7 +116,7 @@ public:
      * @brief 获取当前归档配置
      * @return 当前配置的常量引用
      */
-    const ArchiveConfig& get_config() const noexcept { return _config; }
+    decltype( auto ) get_config() const noexcept { return _config; }
 
     /**
      * @brief 更新归档配置
@@ -133,7 +141,7 @@ private:
      * @return 下次打包的时间点（system_clock::time_point）
      * @note 如果当前时间已超过今天的打包时间，则返回明天的打包时间
      */
-    std::chrono::system_clock::time_point calculate_next_pack_time() const noexcept;
+    decltype( auto ) calculate_next_pack_time() const noexcept;
 
     /**
      * @brief 执行每日日志打包任务
@@ -193,8 +201,7 @@ private:
      * @return 匹配的日志文件路径列表
      * @details 从 current/ 目录中查找文件名包含指定日期的 .log 文件
      */
-    std::vector< std::filesystem::path >
-    get_log_files_by_date( const std::string& date_str ) const noexcept;
+    decltype( auto ) get_log_files_by_date( const std::string& date_str ) const noexcept;
 
     /**
      * @brief 判断文件是否已过期
@@ -221,7 +228,7 @@ private:
 
 private:
     ArchiveConfig           _config;         ///< 归档配置
-    std::atomic_bool        _running;        ///< 后台线程运行标志
+    std::atomic< bool >     _running;        ///< 后台线程运行标志
     std::thread             _worker_thread;  ///< 后台工作线程
     mutable std::mutex      _mutex;          ///< 互斥锁，保护共享状态
     std::condition_variable _cond_var;       ///< 条件变量，用于定时等待和通知

@@ -50,7 +50,8 @@ CFileSink::CFileSink() noexcept :
     _next_buffer( std::make_unique< Buffer >() ),
     _buffers(),
     _buffer_mutex(),
-    _running( false ) {
+    _running( false ),
+    _archive_manager( nullptr ) {
 
     if ( !_file_path.empty() && !std::filesystem::is_directory( _file_path ) ) {
         std::filesystem::create_directories( _file_path );
@@ -64,7 +65,32 @@ CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, std::stri
                       bool enable ) noexcept {}
 
 CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, bool enable,
-                      const ArchiveConfig& archive_cfg ) noexcept {}
+                       const ArchiveConfig& archive_cfg ) noexcept :
+    _level( lvl ),
+    _file_size( fsize ),
+    _file_path( archive_cfg.base_path + "/current" ),
+    _cur_file_name( "" ),
+    _cur_file_size( 0 ),
+    _current_buffer( std::make_unique< Buffer >() ),
+    _next_buffer( std::make_unique< Buffer >() ),
+    _buffers(),
+    _buffer_mutex(),
+    _running( false ),
+    _archive_manager( std::make_unique< CArchiveManager >( archive_cfg ) ) {
+    (void)enable;
+
+    if ( !_file_path.empty() && !std::filesystem::is_directory( _file_path ) ) {
+        std::filesystem::create_directories( _file_path );
+    }
+
+    if ( _archive_manager && archive_cfg.enable_archive ) {
+        _archive_manager->start();
+    }
+
+    init_file_idx();
+    create_new_file();
+    start();
+}
 
 bool CFileSink::write( const LogRecord& r ) noexcept {
     if ( !should_log( r._level ) || r._message.empty() ) {
@@ -298,13 +324,19 @@ std::string CFileSink::get_date_str() noexcept {
     return ss.str();
 }
 
-void CFileSink::set_enabled( bool enable ) noexcept {
-    _enabled.store( enable, std::memory_order_relaxed );
+void CFileSink::set_enabled( bool enabled ) noexcept { (void)enabled; }
+
+bool CFileSink::enabled() const noexcept { return true; }
+
+void CFileSink::enable_archive( bool enable ) noexcept {
+    if ( _archive_manager ) {
+        if ( enable ) {
+            _archive_manager->start();
+        } else {
+            _archive_manager->stop();
+        }
+    }
 }
-
-bool CFileSink::enabled() const noexcept { return _enabled.load( std::memory_order_relaxed ); }
-
-void CFileSink::enable_archive( bool enable ) noexcept { (void)enable; }
 
 CFileSink::~CFileSink() {
     try {
@@ -313,6 +345,9 @@ CFileSink::~CFileSink() {
             if ( _thread.joinable() ) {
                 _thread.join();
             }
+        }
+        if ( _archive_manager ) {
+            _archive_manager->stop();
         }
         flush();
         if ( _file_stream.is_open() ) {

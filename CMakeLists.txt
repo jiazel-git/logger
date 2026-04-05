@@ -13,7 +13,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-# 收集源文件 aux_source_directory(./src/core SRC_CORE)
+# 收集源文件
+aux_source_directory(./src/core SRC_CORE)
 aux_source_directory(./src/sinks SRC_SINKS)
 aux_source_directory(./src/archive_manager SRC_ARCHIVE_MANAGER)
 set(JZLOG_SOURCES ${SRC_CORE} ${SRC_SINKS} ${SRC_ARCHIVE_MANAGER})
@@ -41,3 +42,6 @@ target_link_libraries(test_fixed_buff PRIVATE jzlog)
 # 示例可执行文件
 add_executable(basic_usage ./examples/basic_usage.cc)
 target_link_libraries(basic_usage PRIVATE jzlog)
+
+add_executable(test_archive_integration ./tests/test_archive_integration.cc)
+target_link_libraries(test_archive_integration PRIVATE jzlog)

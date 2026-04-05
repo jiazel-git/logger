@@ -117,17 +117,7 @@ public:
      */
     bool should_log( LogLevel lvl ) const noexcept override;
 
-    /**
-     * @brief 设置是否启用
-     * @param enable 启用状态
-     */
-    void set_enabled( bool enable ) noexcept override;
 
-    /**
-     * @brief 获取启用状态
-     * @return 启用返回 true，否则返回 false
-     */
-    bool enabled() const noexcept override;
 
     /**
      * @brief 析构函数
@@ -139,6 +129,18 @@ public:
      * @param enable 是否启用归档
      */
     void enable_archive( bool enable ) noexcept;
+
+    /**
+     * @brief 设置是否启用
+     * @param enabled 启用状态
+     */
+    void set_enabled( bool enabled ) noexcept override;
+
+    /**
+     * @brief 获取启用状态
+     * @return 启用返回 true，否则返回 false
+     */
+    bool enabled() const noexcept override;
 
 private:
     /**
@@ -197,23 +199,23 @@ private:
     std::string get_date_str() noexcept;
 
 private:
-    LogLevel                _level;            // 日志过滤级别
-    uint32_t                _file_size;        // 单个日志文件最大大小
-    std::string             _file_path;        // 日志文件存储目录路径
-    std::string             _cur_file_name;    // 当前日志文件名
-    uint32_t                _cur_file_size;    // 当前日志文件已写入大小
-    BufferPtr               _current_buffer;   // 当前写入缓冲区
-    BufferPtr               _next_buffer;      // 备用缓冲区
-    BufferVec               _buffers;          // 待写入的缓冲区队列
-    std::mutex              _buffer_mutex;     // 缓冲区互斥锁
-    std::condition_variable _cond;             // 条件变量，用于工作线程
-    std::ofstream           _file_stream;      // 文件输出流
-    int                     _cur_idx;          // 当前文件索引
-    std::string             _cur_date_str;     // 当前日期字符串
-    std::thread             _thread;           // 后台工作线程
-    std::atomic< bool >     _running;          // 线程运行标志
-    std::atomic< bool >     _enabled{ true };  // Sink 启用状态
-    std::mutex              _file_mutex;       // 文件操作互斥锁
+    LogLevel                                      _level;            // 日志过滤级别
+    uint32_t                                      _file_size;        // 单个日志文件最大大小
+    std::string                                   _file_path;        // 日志文件存储目录路径
+    std::string                                   _cur_file_name;    // 当前日志文件文件名
+    uint32_t                                      _cur_file_size;    // 当前日志文件已写入大小
+    BufferPtr                                     _current_buffer;   // 当前写入缓冲区
+    BufferPtr                                     _next_buffer;      // 备用缓冲区
+    BufferVec                                     _buffers;          // 待写入的缓冲区队列
+    std::mutex                                    _buffer_mutex;     // 缓冲区互斥锁
+    std::condition_variable                       _cond;             // 条件变量，用于工作线程
+    std::ofstream                                 _file_stream;      // 文件输出流
+    int                                           _cur_idx;          // 当前文件索引
+    std::string                                   _cur_date_str;     // 当前日期字符串
+    std::thread                                   _thread;           // 后台工作线程
+    std::atomic< bool >                           _running;          // 线程运行标志
+    std::mutex                                    _file_mutex;       // 文件操作互斥锁
+    std::unique_ptr< CArchiveManager >            _archive_manager;  // 归档管理器
 };
 }  // namespace sinks
 }  // namespace jzlog
