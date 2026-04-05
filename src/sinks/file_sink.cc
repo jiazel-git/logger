@@ -28,12 +28,6 @@ namespace sinks
 
 namespace
 {
-/**
- * @brief 线程安全的 localtime 封装
- * @details 使用线程本地缓冲区替代 std::localtime 的静态缓冲区
- * @param time 时间戳
- * @return std::tm 时间结构体（按值返回，线程安全）
- */
 std::tm safe_localtime( std::time_t time ) {
     std::tm tm_buf;
 #ifdef _WIN32
@@ -66,36 +60,49 @@ CFileSink::CFileSink() noexcept :
 }
 
 CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, std::string path,
-                      bool enable ) noexcept {
-    // TODO:
-}
+                      bool enable ) noexcept {}
 
 CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, bool enable,
-                      const ArchiveConfig& archive_cfg ) noexcept {
-    // TODO:
-}
+                      const ArchiveConfig& archive_cfg ) noexcept {}
 
-void CFileSink::write( const LogRecord& r ) {
+bool CFileSink::write( const LogRecord& r ) noexcept {
     if ( !should_log( r._level ) || r._message.empty() ) {
-        return;
+        return false;
     }
-    std::string format_record = format_log_record( r );
+
+    std::string format_record;
+    try {
+        format_record = format_log_record( r );
+    } catch ( ... ) {
+        return false;
+    }
 
     {
         std::lock_guard< std::mutex > buffer_lock{ _buffer_mutex };
         if ( format_record.size() > _current_buffer->avail() ) {
-            _buffers.emplace_back( std::move( _current_buffer ) );
-            std::swap( _current_buffer, _next_buffer );
-            _next_buffer = std::make_unique< Buffer >();
+            auto new_next = std::make_unique< Buffer >();
+            try {
+                _buffers.emplace_back( std::move( _current_buffer ) );
+                _current_buffer = std::move( _next_buffer );
+                _next_buffer    = std::move( new_next );
+            } catch ( ... ) {
+                return false;
+            }
         }
+
+        if ( format_record.size() > _current_buffer->avail() ) {
+            return false;
+        }
+
         _current_buffer->append( format_record.c_str(), format_record.size() );
     }
 
     _cond.notify_one();
+    return true;
 }
 
-void CFileSink::flush() {
-    auto write_buffers = BufferVec{};
+bool CFileSink::flush() noexcept {
+    BufferVec write_buffers{};
     {
         std::lock_guard< std::mutex > lock{ _buffer_mutex };
 
@@ -108,11 +115,17 @@ void CFileSink::flush() {
         write_buffers.swap( _buffers );
     }
 
-    if ( !write_buffers.empty() ) {
-        for ( auto& buffer : write_buffers ) {
-            flush_buffer_to_file( std::move( buffer ) );
+    if ( write_buffers.empty() ) {
+        return true;
+    }
+
+    bool all_success = true;
+    for ( auto& buffer : write_buffers ) {
+        if ( !flush_buffer_to_file( std::move( buffer ) ) ) {
+            all_success = false;
         }
     }
+    return all_success;
 }
 
 void CFileSink::set_level( LogLevel lvl ) noexcept { _level = lvl; }
@@ -145,7 +158,7 @@ void CFileSink::create_new_file() noexcept {
     }
 }
 
-void CFileSink::flush_buffer_to_file( BufferPtr buffer_ptr ) noexcept {
+bool CFileSink::flush_buffer_to_file( BufferPtr buffer_ptr ) noexcept {
     std::lock_guard< std::mutex > file_lock{ _file_mutex };
 
     if ( _cur_file_size + buffer_ptr->length() > _file_size ) {
@@ -156,6 +169,8 @@ void CFileSink::flush_buffer_to_file( BufferPtr buffer_ptr ) noexcept {
     _file_stream.write( buffer_ptr->data(), buffer_ptr->length() );
     _cur_file_size += buffer_ptr->length();
     _file_stream.flush();
+
+    return _file_stream.good();
 }
 
 void CFileSink::rotate_file_() {
@@ -234,18 +249,15 @@ void CFileSink::start() noexcept {
 }
 
 void CFileSink::init_file_idx() noexcept {
-    // 1. 获取当前日期字符串
     std::string today_str = get_date_str();
 
-    int max_idx           = -1;  // 初始化为 -1，表示如果没找到文件，第一个文件索引为 0
+    int max_idx           = -1;
 
-    // 2. 遍历目录
-    // 注意：需要处理目录不存在的情况
     std::error_code ec;
     if ( !std::filesystem::exists( _file_path, ec ) ||
          !std::filesystem::is_directory( _file_path, ec ) ) {
-        std::filesystem::create_directories( _file_path, ec );  // 如果目录不存在则创建
-        _cur_idx = 0;                                           // 新目录，直接从 0 开始
+        std::filesystem::create_directories( _file_path, ec );
+        _cur_idx = 0;
         return;
     }
 
@@ -253,22 +265,16 @@ void CFileSink::init_file_idx() noexcept {
         if ( entry.is_regular_file() ) {
             std::string filename = entry.path().filename().string();
 
-            // 3. 简单匹配：检查文件名是否以 "日期_" 开头
-            // 你的格式是：YYYYMMDD_XXX
             if ( filename.length() > today_str.length() + 1 &&
                  filename.substr( 0, today_str.length() ) == today_str &&
                  filename[ today_str.length() ] == '_' ) {
 
-                // 4. 提取索引部分
-                // 截取 "日期_" 之后的部分
                 std::string idx_str = filename.substr( today_str.length() + 1 );
 
                 try {
                     int current_idx = std::stoi( idx_str );
                     max_idx         = std::max( max_idx, current_idx );
-                } catch ( ... ) {
-                    // 忽略格式错误的文件名
-                }
+                } catch ( ... ) {}
             }
         }
     }
@@ -292,21 +298,22 @@ void CFileSink::set_enabled( bool enable ) noexcept {
 
 bool CFileSink::enabled() const noexcept { return _enabled.load( std::memory_order_relaxed ); }
 
-void CFileSink::enable_archive( bool enable ) noexcept {
-    // TODO: 实现归档功能
-    (void)enable;
-}
+void CFileSink::enable_archive( bool enable ) noexcept { (void)enable; }
 
 CFileSink::~CFileSink() {
-    if ( _running.exchange( false ) ) {
-        _cond.notify_all();
-        if ( _thread.joinable() ) {
-            _thread.join();
+    try {
+        if ( _running.exchange( false ) ) {
+            _cond.notify_all();
+            if ( _thread.joinable() ) {
+                _thread.join();
+            }
         }
-    }
-    flush();
-    if ( _file_stream.is_open() ) {
-        _file_stream.close();
+        flush();
+        if ( _file_stream.is_open() ) {
+            _file_stream.close();
+        }
+    } catch ( ... ) {
+        std::cerr << "Error in CFileSink destructor" << std::endl;
     }
 }
 

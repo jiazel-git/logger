@@ -18,17 +18,17 @@ namespace sinks
  * @brief 日志归档配置结构体
  * @details 用于配置日志归档、压缩和清理的相关参数
  */
-struct ArchiveConfig
-{
-    std::string  base_path;           ///< 日志根目录，默认 "../log/"
-    std::string  log_file_pattern;    ///< 日志文件名前缀模式，用于匹配需要归档的日志文件，如 "app_"
-    uint32_t     pack_hour;           ///< 每日打包时间（小时），默认 2（凌晨2点执行）
-    uint32_t     pack_minute;         ///< 每日打包时间（分钟），默认 0
-    uint64_t     compress_threshold;  ///< 压缩阈值（字节），当 tar 文件总大小超过此值时触发压缩，默认 100MB
-    uint32_t     retention_days;      ///< 日志文件保留天数，超过此天数的文件将被自动删除，默认 30 天
-    bool         enable_archive;      ///< 是否启用日志归档功能，默认 true
-    bool         enable_compress;     ///< 是否启用 zstd 压缩功能，默认 true
-    bool         enable_cleanup;      ///< 是否启用过期文件清理功能，默认 true
+struct ArchiveConfig {
+    std::string base_path;         ///< 日志根目录，默认 "../log/"
+    std::string log_file_pattern;  ///< 日志文件名前缀模式，用于匹配需要归档的日志文件，如 "app_"
+    uint32_t    pack_hour;         ///< 每日打包时间（小时），默认 2（凌晨2点执行）
+    uint32_t    pack_minute;       ///< 每日打包时间（分钟），默认 0
+    uint64_t
+        compress_threshold;   ///< 压缩阈值（字节），当 tar 文件总大小超过此值时触发压缩，默认 100MB
+    uint32_t retention_days;  ///< 日志文件保留天数，超过此天数的文件将被自动删除，默认 30 天
+    bool     enable_archive;  ///< 是否启用日志归档功能，默认 true
+    bool     enable_compress;  ///< 是否启用 zstd 压缩功能，默认 true
+    bool     enable_cleanup;   ///< 是否启用过期文件清理功能，默认 true
 
     /**
      * @brief 默认构造函数，初始化为默认配置
@@ -62,8 +62,7 @@ struct ArchiveConfig
  *
  * 线程安全：此类内部使用互斥锁保护共享状态，可安全地在多线程环境中使用
  */
-class CArchiveManager
-{
+class CArchiveManager {
 public:
     /**
      * @brief 构造函数
@@ -79,10 +78,10 @@ public:
     ~CArchiveManager();
 
     // 禁止拷贝和移动，确保唯一性和资源安全
-    CArchiveManager( const CArchiveManager& ) = delete;
+    CArchiveManager( const CArchiveManager& )            = delete;
     CArchiveManager& operator=( const CArchiveManager& ) = delete;
-    CArchiveManager( CArchiveManager&& ) = delete;
-    CArchiveManager& operator=( CArchiveManager&& ) = delete;
+    CArchiveManager( CArchiveManager&& )                 = delete;
+    CArchiveManager& operator=( CArchiveManager&& )      = delete;
 
     /**
      * @brief 启动归档管理器
@@ -194,7 +193,8 @@ private:
      * @return 匹配的日志文件路径列表
      * @details 从 current/ 目录中查找文件名包含指定日期的 .log 文件
      */
-    std::vector<std::filesystem::path> get_log_files_by_date( const std::string& date_str ) const noexcept;
+    std::vector< std::filesystem::path >
+    get_log_files_by_date( const std::string& date_str ) const noexcept;
 
     /**
      * @brief 判断文件是否已过期
@@ -220,18 +220,17 @@ private:
     bool check_zstd_available() const noexcept;
 
 private:
-    ArchiveConfig                   _config;         ///< 归档配置
-    std::atomic_bool                _running;        ///< 后台线程运行标志
-    std::thread                     _worker_thread;  ///< 后台工作线程
-    mutable std::mutex              _mutex;          ///< 互斥锁，保护共享状态
-    std::condition_variable         _cond_var;       ///< 条件变量，用于定时等待和通知
-
+    ArchiveConfig           _config;         ///< 归档配置
+    std::atomic_bool        _running;        ///< 后台线程运行标志
+    std::thread             _worker_thread;  ///< 后台工作线程
+    mutable std::mutex      _mutex;          ///< 互斥锁，保护共享状态
+    std::condition_variable _cond_var;       ///< 条件变量，用于定时等待和通知
 
     // 目录路径缓存
-    std::string                     _current_dir;    ///< 当前日志目录 (base_path/current/)
-    std::string                     _archived_dir;   ///< 归档日志目录 (base_path/archived/)
-    std::string                     _tar_dir;        ///< tar 文件目录 (base_path/tar/)
-    std::string                     _compressed_dir; ///< 压缩文件目录 (base_path/compressed/)
+    std::string _current_dir;     ///< 当前日志目录 (base_path/current/)
+    std::string _archived_dir;    ///< 归档日志目录 (base_path/archived/)
+    std::string _tar_dir;         ///< tar 文件目录 (base_path/tar/)
+    std::string _compressed_dir;  ///< 压缩文件目录 (base_path/compressed/)
 };
 
 }  // namespace sinks

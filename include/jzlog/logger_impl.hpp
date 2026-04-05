@@ -1,3 +1,7 @@
+/**
+ * @file logger_impl.hpp
+ * @brief 日志记录器实现类
+ */
 #pragma once
 #include "jzlog/core/log_level.h"
 #include "jzlog/core/log_record.h"
@@ -16,147 +20,186 @@ namespace jzlog
 /**
  * @class CLoggerImpl
  * @brief 日志记录器实现类
- * @details 采用简化架构：用户线程直接调用 sink.write()，由 sink 内部处理缓冲
- *
- * 架构对比：
- * - 旧架构：用户线程 → 队列 → 工作线程 → sink → 双缓冲区 → 磁盘
- * - 新架构：用户线程 → sink → 三缓冲区 → 磁盘
- *
- * 优势：
- * - 减少一次线程间拷贝
- * - 降低延迟
- * - 简化代码复杂度
  */
 class CLoggerImpl {
 public:
     /**
      * @brief 构造函数
      * @param lvl 日志级别
-     * @param logger_name 日志器名称
+     * @param logger_name 日志记录器名称
      */
-    explicit CLoggerImpl( loglevel::LogLevel lvl, std::string_view logger_name ) noexcept {}
+    explicit CLoggerImpl( loglevel::LogLevel lvl, std::string_view logger_name ) noexcept {
+        try {
+            (void)lvl;
+            (void)logger_name;
+        } catch (...) {
+        }
+    }
 
+    /**
+     * @brief 拷贝构造函数（已删除）
+     */
     CLoggerImpl( const CLoggerImpl& )            = delete;
+
+    /**
+     * @brief 拷贝赋值运算符（已删除）
+     */
     CLoggerImpl& operator=( const CLoggerImpl& ) = delete;
 
+    /**
+     * @brief 移动构造函数（已删除）
+     */
     CLoggerImpl( CLoggerImpl&& oth )             = delete;
+
+    /**
+     * @brief 移动赋值运算符（已删除）
+     */
     CLoggerImpl& operator=( CLoggerImpl&& oth )  = delete;
 
+    /**
+     * @brief 析构函数
+     */
     ~CLoggerImpl()                               = default;
 
 public:
     /**
      * @brief 记录 INFO 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void info( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel ::INFO, fmt, std::forward< Args >( args )... );
+    inline bool info( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel ::INFO, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 记录 TRACE 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void trace( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel::TRACE, fmt, std::forward< Args >( args )... );
+    inline bool trace( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel::TRACE, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 记录 DEBUG 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void debug( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel::DEBUG, fmt, std::forward< Args >( args )... );
+    inline bool debug( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel::DEBUG, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 记录 WARN 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void warn( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel::WARN, fmt, std::forward< Args >( args )... );
+    inline bool warn( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel::WARN, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 记录 ERROR 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void error( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel::ERROR, fmt, std::forward< Args >( args )... );
+    inline bool error( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel::ERROR, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 记录 FATAL 级别日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @tparam Args 可变模板参数类型
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    inline void fatal( std::string_view fmt, Args&&... args ) const noexcept {
-        add_record( LogLevel::FATAL, fmt, std::forward< Args >( args )... );
+    inline bool fatal( std::string_view fmt, Args&&... args ) const {
+        return add_record( LogLevel::FATAL, fmt, std::forward< Args >( args )... );
     }
 
     /**
      * @brief 添加日志输出目标
-     * @param sink 日志 sink 智能指针
+     * @param sink 日志输出目标的智能指针
+     * @return 成功返回 true，失败返回 false
      */
-    void add_sink( std::unique_ptr< sinks::ISink > sink ) noexcept {
+    bool add_sink( std::unique_ptr< sinks::ISink > sink ) {
+        if ( !sink ) {
+            return false;
+        }
         _sinks.emplace_back( std::move( sink ) );
+        return true;
     }
 
 private:
     /**
-     * @brief 将日志记录写入所有 sink
+     * @brief 将日志记录写入所有输出目标
      * @param record 日志记录
+     * @return 所有输出目标都成功返回 true，否则返回 false
      */
-    void log( LogRecord&& record ) const noexcept {
+    bool log( LogRecord&& record ) const {
+        bool all_success = true;
         for ( auto& sink : _sinks ) {
-            sink->write( record );
+            if ( !sink->write( record ) ) {
+                all_success = false;
+            }
         }
+        return all_success;
     }
 
     /**
-     * @brief 构造并记录日志
-     * @tparam Args 参数类型
-     * @param fmt 格式字符串
+     * @brief 添加日志记录
+     * @tparam Args 可变模板参数类型
+     * @param level 日志级别
+     * @param fmt 格式化字符串
      * @param args 格式化参数
+     * @return 成功返回 true，失败返回 false
      */
     template < class... Args >
-    void add_record( LogLevel level, std::string_view fmt, Args&&... args ) const noexcept {
+    bool add_record( LogLevel level, std::string_view fmt, Args&&... args ) const {
         int required = snprintf( nullptr, 0, fmt.data(), std::forward< Args >( args )... );
 
         if ( required < 0 ) {
-            return;
+            return false;
         }
-        std::vector< char > buf( required + 1, 0 );
-
-        snprintf( buf.data(), required + 1, fmt.data(), std::forward< Args >( args )... );
+        
+        std::vector< char > buf;
         LogRecord record;
-        record._function  = __func__;
-        record._line      = __LINE__;
-        record._thread_id = std::this_thread::get_id();
-        record._message   = std::string( buf.data(), required );
-        record._level     = level;
-        log( std::move( record ) );
+        
+        try {
+            buf.resize( required + 1, 0 );
+            snprintf( buf.data(), required + 1, fmt.data(), std::forward< Args >( args )... );
+            
+            record._function  = __func__;
+            record._line      = __LINE__;
+            record._thread_id = std::this_thread::get_id();
+            record._message   = std::string( buf.data(), required );
+            record._level     = level;
+            
+            return log( std::move( record ) );
+        } catch ( ... ) {
+            return false;
+        }
     }
 
 private:
-    std::vector< std::unique_ptr< sinks::ISink > > _sinks;
+    std::vector< std::unique_ptr< sinks::ISink > > _sinks;  // 日志输出目标列表
 };
 
 }  // namespace jzlog
