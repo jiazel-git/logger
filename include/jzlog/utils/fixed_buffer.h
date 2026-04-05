@@ -13,7 +13,7 @@ namespace jzlog
 namespace utils
 {
 
-constexpr size_t kSmallBuffer = 1024;  // 小缓冲区大小
+constexpr size_t kSmallBuffer = 1024;             // 小缓冲区大小
 constexpr size_t kLargeBuffer = 4 * 1024 * 1024;  // 大缓冲区大小
 
 /**
@@ -32,7 +32,7 @@ public:
     /**
      * @brief 拷贝构造函数（已删除）
      */
-    FixedBuffer( const FixedBuffer& )            = delete;
+    FixedBuffer( const FixedBuffer& ) = delete;
 
     /**
      * @brief 拷贝赋值运算符（已删除）
@@ -42,65 +42,67 @@ public:
     /**
      * @brief 移动构造函数
      */
-    FixedBuffer( FixedBuffer&& oth )             = default;
+    FixedBuffer( FixedBuffer&& oth ) = default;
 
     /**
      * @brief 移动赋值运算符
      */
-    FixedBuffer& operator=( FixedBuffer&& oth )  = default;
+    FixedBuffer& operator=( FixedBuffer&& oth ) = default;
 
     /**
      * @brief 追加数据到缓冲区
      * @param buf 数据指针
      * @param len 数据长度
      */
-    void append( const char* buf, size_t len ) {
+    bool append( const char* buf, size_t len ) {
         if ( avail() < len || buf == nullptr || len == 0 ) {
-            return;
+            return false;
         }
         std::memcpy( _data.data() + _size, buf, len );
         _size += len;
+        return true;
     }
 
     /**
      * @brief 获取缓冲区数据指针（常量版本）
      * @return 数据指针
      */
-    const char* data() const { return _data.data(); }
+    [[nodiscard]] const char* data() const { return _data.data(); }
 
     /**
      * @brief 获取缓冲区数据指针
      * @return 数据指针
      */
-    char*       data() { return _data.data(); }
+    [[nodiscard]] char* data() { return _data.data(); }
 
     /**
      * @brief 获取缓冲区已用大小
      * @return 已用大小
      */
-    size_t length() const { return _size; }
+    size_t length() const noexcept { return _size; }
 
     /**
      * @brief 获取缓冲区可用大小
      * @return 可用大小
      */
-    size_t avail() const { return _N - _size; }
+    size_t avail() const noexcept { return _N - _size; }
 
     /**
      * @brief 追加单个字符到缓冲区
      * @param c 字符
      */
-    void append( char c ) {
+    bool append( char c ) {
         if ( avail() < 1 ) {
-            return;
+            return false;
         }
         _data[ _size++ ] = c;
+        return true;
     }
 
     /**
      * @brief 重置缓冲区
      */
-    void reset() { _size = 0; }
+    void reset() noexcept { _size = 0; }
 
 private:
     std::array< char, _N > _data;  // 数据数组

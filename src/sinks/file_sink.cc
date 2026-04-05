@@ -15,6 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -28,7 +29,7 @@ namespace sinks
 
 namespace
 {
-std::tm safe_localtime( std::time_t time ) {
+std::optional< std::tm > safe_localtime( std::time_t time ) {
     std::tm tm_buf;
 #ifdef _WIN32
     localtime_s( &tm_buf, &time );
@@ -185,11 +186,13 @@ void CFileSink::rotate_file_() {
 std::string CFileSink::format_log_record( const LogRecord& r ) {
     std::stringstream ss;
 
-    auto    time = std::chrono::system_clock::to_time_t( r._timestamp );
-    std::tm tm   = safe_localtime( time );  // 线程安全
-
-    ss << std::put_time( &tm, "%Y-%m-%d %H:%M:%S" ) << " [" << loglevel::to_string( r._level )
-       << "] " << "[" << r._thread_id << "]"
+    auto time = std::chrono::system_clock::to_time_t( r._timestamp );
+    auto tm   = safe_localtime( time );  // 线程安全
+    if ( !tm.has_value() ) {
+        return "";
+    }
+    ss << std::put_time( &( tm.value() ), "%Y-%m-%d %H:%M:%S" ) << " ["
+       << loglevel::to_string( r._level ) << "] " << "[" << r._thread_id << "]"
        << "[" << r._function << ":" << r._line << "]" << r._message << "\n";
 
     return ss.str();
@@ -284,11 +287,14 @@ void CFileSink::init_file_idx() noexcept {
 }
 
 std::string CFileSink::get_date_str() noexcept {
-    auto              now  = std::chrono::system_clock::now();
-    auto              time = std::chrono::system_clock::to_time_t( now );
-    std::tm           tm   = safe_localtime( time );  // 线程安全
+    auto now  = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t( now );
+    auto tm   = safe_localtime( time );  // 线程安全
+    if ( !tm.has_value() ) {
+        return "";
+    }
     std::stringstream ss;
-    ss << std::put_time( &tm, "%Y%m%d" );
+    ss << std::put_time( &( tm.value() ), "%Y%m%d" );
     return ss.str();
 }
 

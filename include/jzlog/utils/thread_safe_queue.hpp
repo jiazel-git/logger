@@ -30,12 +30,12 @@ public:
     /**
      * @brief 默认构造函数
      */
-    CThreadSafeQueue()                                     = default;
+    CThreadSafeQueue() = default;
 
     /**
      * @brief 拷贝构造函数（已删除）
      */
-    CThreadSafeQueue( const CThreadSafeQueue& )            = delete;
+    CThreadSafeQueue( const CThreadSafeQueue& ) = delete;
 
     /**
      * @brief 拷贝赋值运算符（已删除）
@@ -45,7 +45,7 @@ public:
     /**
      * @brief 移动构造函数（已删除）
      */
-    CThreadSafeQueue( CThreadSafeQueue&& _Oth )            = delete;
+    CThreadSafeQueue( CThreadSafeQueue&& _Oth ) = delete;
 
     /**
      * @brief 移动赋值运算符（已删除）
@@ -55,7 +55,7 @@ public:
     /**
      * @brief 析构函数
      */
-    ~CThreadSafeQueue()                                    = default;
+    ~CThreadSafeQueue() = default;
 
     /**
      * @brief 推入元素到队列（拷贝版本）
@@ -114,7 +114,7 @@ public:
      * @brief 判断队列是否为空
      * @return 空返回 true，否则返回 false
      */
-    [[nodiscard]] bool empty() const {
+    bool empty() const {
         std::lock_guard guard( _mutex );
         return _data.empty();
     }
@@ -123,7 +123,7 @@ public:
      * @brief 获取队列大小
      * @return 队列大小
      */
-    [[nodiscard]] size_t size() const {
+    size_t size() const {
         std::lock_guard guard( _mutex );
         return _data.size();
     }
@@ -151,18 +151,6 @@ public:
      * @brief 通知所有等待的线程
      */
     inline void notify_all() const noexcept { _cond.notify_all(); }
-
-    /**
-     * @brief 获取条件变量
-     * @return 条件变量引用
-     */
-    std::condition_variable& get_cond() { return _cond; }
-
-    /**
-     * @brief 获取互斥锁
-     * @return 互斥锁引用
-     */
-    std::mutex&              get_lock() { return _mutex; }
 
 private:
     mutable std::mutex              _mutex;  // 互斥锁

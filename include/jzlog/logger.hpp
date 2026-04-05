@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include "jzlog/core/log_level.h"
 #include "jzlog/sinks/sink.h"
 #include "logger_impl.hpp"
 #include <memory>
@@ -25,7 +24,7 @@ public:
     /**
      * @brief 移动构造函数（已删除）
      */
-    CLogger( CLogger&& oth )            = delete;
+    CLogger( CLogger&& oth ) = delete;
 
     /**
      * @brief 移动赋值运算符（已删除）
@@ -35,22 +34,13 @@ public:
     /**
      * @brief 析构函数
      */
-    ~CLogger()                          = default;
+    ~CLogger() = default;
 
 public:
     /**
      * @brief 构造函数
-     * @param lvl 日志级别，默认为 LogLevel::TRACE
-     * @param logger_name 日志记录器名称，默认为 "logger"
-     * @throws std::bad_alloc 当内存分配失败时抛出
      */
-    explicit CLogger( loglevel::LogLevel lvl         = loglevel::LogLevel::TRACE,
-                      std::string_view   logger_name = "logger" ) :
-        _impl( std::make_unique< CLoggerImpl >( lvl, logger_name ) ) {
-        if ( !_impl ) {
-            throw std::bad_alloc();
-        }
-    }
+    explicit CLogger() : _impl( std::make_unique< CLoggerImpl >() ) {}
 
     /**
      * @brief 记录 INFO 级别日志

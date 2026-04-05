@@ -33,7 +33,7 @@ enum class LogLevel : int
  * @param level 日志级别
  * @return 日志级别的字符串表示
  */
-inline constexpr std::string_view to_string( LogLevel level ) noexcept {
+[[nodiscard]] inline constexpr std::string_view to_string( LogLevel level ) noexcept {
     switch ( level ) {
     case ( LogLevel::TRACE ):
         return "TRACE";
@@ -59,7 +59,7 @@ inline constexpr std::string_view to_string( LogLevel level ) noexcept {
  * @param str 日志级别字符串
  * @return 日志级别枚举值
  */
-inline LogLevel from_string( std::string_view str ) noexcept {
+[[nodiscard]] inline LogLevel from_string( std::string_view str ) noexcept {
     auto upper_str = []( std::string_view s ) -> std::string {
         std::string ret{ s };
         std::transform( ret.begin(), ret.end(), ret.begin(), []( auto& ch ) {

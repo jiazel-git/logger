@@ -25,21 +25,13 @@ class CLoggerImpl {
 public:
     /**
      * @brief 构造函数
-     * @param lvl 日志级别
-     * @param logger_name 日志记录器名称
      */
-    explicit CLoggerImpl( loglevel::LogLevel lvl, std::string_view logger_name ) noexcept {
-        try {
-            (void)lvl;
-            (void)logger_name;
-        } catch (...) {
-        }
-    }
+    explicit CLoggerImpl() noexcept {}
 
     /**
      * @brief 拷贝构造函数（已删除）
      */
-    CLoggerImpl( const CLoggerImpl& )            = delete;
+    CLoggerImpl( const CLoggerImpl& ) = delete;
 
     /**
      * @brief 拷贝赋值运算符（已删除）
@@ -49,17 +41,17 @@ public:
     /**
      * @brief 移动构造函数（已删除）
      */
-    CLoggerImpl( CLoggerImpl&& oth )             = delete;
+    CLoggerImpl( CLoggerImpl&& oth ) = delete;
 
     /**
      * @brief 移动赋值运算符（已删除）
      */
-    CLoggerImpl& operator=( CLoggerImpl&& oth )  = delete;
+    CLoggerImpl& operator=( CLoggerImpl&& oth ) = delete;
 
     /**
      * @brief 析构函数
      */
-    ~CLoggerImpl()                               = default;
+    ~CLoggerImpl() = default;
 
 public:
     /**
@@ -178,20 +170,20 @@ private:
         if ( required < 0 ) {
             return false;
         }
-        
+
         std::vector< char > buf;
-        LogRecord record;
-        
+        LogRecord           record;
+
         try {
             buf.resize( required + 1, 0 );
             snprintf( buf.data(), required + 1, fmt.data(), std::forward< Args >( args )... );
-            
+
             record._function  = __func__;
             record._line      = __LINE__;
             record._thread_id = std::this_thread::get_id();
             record._message   = std::string( buf.data(), required );
             record._level     = level;
-            
+
             return log( std::move( record ) );
         } catch ( ... ) {
             return false;
