@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5...4.0)
 project(
   jzlog
   VERSION 1.0.0
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,3 +45,9 @@ target_link_libraries(basic_usage PRIVATE jzlog)
 
 add_executable(test_archive_integration ./tests/test_archive_integration.cc)
 target_link_libraries(test_archive_integration PRIVATE jzlog)
+
+add_executable(test_network_sink_client ./tests/test_network_sink_client.cc)
+target_link_libraries(test_network_sink_client PRIVATE jzlog)
+
+add_executable(test_tcp_server ./tests/test_tcp_server.c)
+set_target_properties(test_tcp_server PROPERTIES LINKER_LANGUAGE C)

@@ -65,7 +65,7 @@ CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, std::stri
                       bool enable ) noexcept {}
 
 CFileSink::CFileSink( LogLevel lvl, uint32_t fsize, uint32_t buf_size, bool enable,
-                       const ArchiveConfig& archive_cfg ) noexcept :
+                      const ArchiveConfig& archive_cfg ) noexcept :
     _level( lvl ),
     _file_size( fsize ),
     _file_path( archive_cfg.base_path + "/current" ),
@@ -146,12 +146,10 @@ bool CFileSink::flush() noexcept {
         return true;
     }
 
-    bool all_success = true;
-    for ( auto& buffer : write_buffers ) {
-        if ( !flush_buffer_to_file( std::move( buffer ) ) ) {
-            all_success = false;
-        }
-    }
+    bool all_success =
+        std::all_of( write_buffers.begin(), write_buffers.end(), [ this ]( auto& buffer ) {
+            return flush_buffer_to_file( std::move( buffer ) );
+        } );
     return all_success;
 }
 
@@ -265,9 +263,9 @@ void CFileSink::work_thread() noexcept {
     }
 
     if ( !final_buffers.empty() ) {
-        for ( auto& buffer : final_buffers ) {
+        std::for_each( final_buffers.begin(), final_buffers.end(), [ this ]( auto& buffer ) {
             flush_buffer_to_file( std::move( buffer ) );
-        }
+        } );
     }
 }
 
